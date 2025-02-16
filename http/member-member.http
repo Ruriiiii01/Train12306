@@ -1,6 +1,6 @@
 GET http://localhost:8000/member/member/count
 Accept: application/json
-token: 123
+Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYmYiOjE3Mzk2MjA2OTUsIm1vYmlsZSI6IjEzMDAwMDAwMDAxIiwiaWQiOjE4OTAzNzE2NTk4MDY5MzcwODgsImV4cCI6MTczOTcwNzA5NSwiaWF0IjoxNzM5NjIwNjk1fQ.titEpxv0xsbAPZOaO3coYmA2ubJo_21mMnpn7KLjSQc
 
 ###
 POST http://localhost:8000/member/member/register
