@@ -6,11 +6,11 @@ public class SnowUtil {
     private static final long dataCenterId = 1;
     private static final long workerId = 1;
 
-    public static long getNextSnowFlakeId() {
+    public static long getSnowflakeNextId() {
         return IdUtil.getSnowflake(dataCenterId, workerId).nextId();
     }
 
-    public static String getNextSnowFlakeIdStr() {
+    public static String getSnowflakeNextIdStr() {
         return IdUtil.getSnowflake(dataCenterId, workerId).nextIdStr();
     }
 }

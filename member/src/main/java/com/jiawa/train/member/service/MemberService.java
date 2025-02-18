@@ -36,7 +36,7 @@ public class MemberService {
         }
         Member member = new Member();
         member.setMobile(mobile);
-        member.setId(SnowUtil.getNextSnowFlakeId());
+        member.setId(SnowUtil.getSnowflakeNextId());
         memberMapper.insertSelective(member);
         return member.getId();
     }
@@ -49,7 +49,7 @@ public class MemberService {
         if(ObjectUtil.isNull(memberDB)) {
             Member member = new Member();
             member.setMobile(mobile);
-            member.setId(SnowUtil.getNextSnowFlakeId());
+            member.setId(SnowUtil.getSnowflakeNextId());
             memberMapper.insertSelective(member);
         }
 

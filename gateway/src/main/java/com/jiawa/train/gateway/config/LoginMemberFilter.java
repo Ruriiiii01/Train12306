@@ -27,7 +27,7 @@ public class LoginMemberFilter implements GlobalFilter, Ordered {
             || path.contains("/member/member/send-code")) {
             return chain.filter(exchange);
         }
-        String token = exchange.getRequest().getHeaders().getFirst("Authorization");
+        String token = exchange.getRequest().getHeaders().getFirst("token");
         // token 不为空
         if (StrUtil.isNotBlank(token)) {
             boolean validate = JwtUtil.validate(token);

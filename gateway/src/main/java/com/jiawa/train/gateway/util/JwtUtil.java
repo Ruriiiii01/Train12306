@@ -43,6 +43,7 @@ public class JwtUtil {
             JWT jwt = JWTUtil.parseToken(token).setKey(key.getBytes());
             // validate包含了verify
             boolean validate = jwt.validate(0);
+            LOG.info("token：{}",token);
             LOG.info("JWT token校验结果：{}", validate);
             return validate;
         } catch (Exception e) {
