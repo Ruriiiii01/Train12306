@@ -3,6 +3,7 @@ Content-Type: application/json
 token: {{token}}
 
 {
+  "memberId": 1624581077500825600,
   "name": "test",
   "idCard": "123321",
   "type": "1"
@@ -30,8 +31,8 @@ token: {{token}}
 
 ###
 
-DELETE http://localhost:8000/member/passenger/delete/1628627401883914240
+DELETE http://localhost:8000/member/passenger/delete/1891820618354135040
 Accept: application/json
-Authorization: {{token}}
+token: {{token}}
 
 

@@ -1,6 +1,5 @@
 package com.jiawa.train.member.controller;
 
-import com.jiawa.train.common.context.LoginMemberContext;
 import com.jiawa.train.common.resp.CommonResp;
 import com.jiawa.train.common.resp.PageResp;
 import com.jiawa.train.member.req.PassengerQueryReq;
@@ -14,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/passenger")
 public class PassengerController {
+
     @Resource
     private PassengerService passengerService;
 
@@ -25,7 +25,14 @@ public class PassengerController {
 
     @GetMapping("/query-list")
     public CommonResp<PageResp<PassengerQueryResp>> queryList(@Valid PassengerQueryReq req) {
-        req.setMemberId(LoginMemberContext.getId());
-        return new CommonResp<>(passengerService.queryList(req));
+        PageResp<PassengerQueryResp> list = passengerService.queryList(req);
+        return new CommonResp<>(list);
     }
+
+    @DeleteMapping("/delete/{id}")
+    public CommonResp<Object> delete(@PathVariable Long id) {
+        passengerService.delete(id);
+        return new CommonResp<>();
+    }
+
 }
