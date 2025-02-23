@@ -1,5 +1,6 @@
 package com.jiawa.train.member.controller;
 
+import com.jiawa.train.common.context.LoginMemberContext;
 import com.jiawa.train.common.resp.CommonResp;
 import com.jiawa.train.common.resp.PageResp;
 import com.jiawa.train.member.req.PassengerQueryReq;
@@ -19,6 +20,7 @@ public class PassengerController {
 
     @PostMapping("/save")
     public CommonResp<Object> save(@Valid @RequestBody PassengerSaveReq req) {
+        req.setMemberId(LoginMemberContext.getId());
         passengerService.save(req);
         return new CommonResp<>();
     }
