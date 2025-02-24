@@ -23,9 +23,9 @@
 
         <!-- 配置数据源，需要根据自己的项目修改 -->
         <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
-                        connectionURL="jdbc:mysql://rm-uf62v90x7t5hukv5dro.mysql.rds.aliyuncs.com/train_batch?serverTimezone=Asia/Shanghai"
-                        userId="train_batch"
-                        password="Batch123">
+                        connectionURL="jdbc:mysql://localhost:3306/train_batch?serverTimezone=Asia/Shanghai"
+                        userId="root"
+                        password="123456">
         </jdbcConnection>
 
         <!-- domain类的位置 targetProject是相对pom.xml的路径-->
@@ -41,6 +41,6 @@
                              targetPackage="com.jiawa.train.batch.mapper"
                              type="XMLMAPPER"/>
 
-        <table tableName="member" domainObjectName="Member"/>
+        <table tableName="member" domainObjectName="Memer"/>
     </context>
 </generatorConfiguration>
