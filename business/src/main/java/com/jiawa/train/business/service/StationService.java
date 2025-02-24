@@ -1,18 +1,21 @@
 package com.jiawa.train.business.service;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.jiawa.train.common.resp.PageResp;
-import com.jiawa.train.common.util.SnowUtil;
 import com.jiawa.train.business.domain.Station;
 import com.jiawa.train.business.domain.StationExample;
 import com.jiawa.train.business.mapper.StationMapper;
 import com.jiawa.train.business.req.StationQueryReq;
 import com.jiawa.train.business.req.StationSaveReq;
 import com.jiawa.train.business.resp.StationQueryResp;
+import com.jiawa.train.common.exception.BusinessException;
+import com.jiawa.train.common.exception.BusinessExceptionEnum;
+import com.jiawa.train.common.resp.PageResp;
+import com.jiawa.train.common.util.SnowUtil;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +35,11 @@ public class StationService {
         DateTime now = DateTime.now();
         Station station = BeanUtil.copyProperties(req, Station.class);
         if (ObjectUtil.isNull(station.getId())) {
+            // 校验唯一性
+            Station stationDB = selectByUniqueKey(req.getName());
+            if (ObjectUtil.isNotNull(stationDB)) {
+                throw new BusinessException(BusinessExceptionEnum.BUSINESS_STATION_NAME_UNIQUE_ERROR);
+            }
             station.setId(SnowUtil.getSnowflakeNextId());
             station.setCreateTime(now);
             station.setUpdateTime(now);
@@ -40,6 +48,16 @@ public class StationService {
             station.setUpdateTime(now);
             stationMapper.updateByPrimaryKey(station);
         }
+    }
+
+    private Station selectByUniqueKey(String name) {
+        StationExample example = new StationExample();
+        example.createCriteria().andNameEqualTo(name);
+        List<Station> list = stationMapper.selectByExample(example);
+        if(CollUtil.isEmpty(list)) {
+            return null;
+        }
+        return list.get(0);
     }
 
     public PageResp<StationQueryResp> queryList(StationQueryReq req) {

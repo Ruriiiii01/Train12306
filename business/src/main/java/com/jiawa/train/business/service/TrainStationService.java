@@ -1,6 +1,7 @@
 package com.jiawa.train.business.service;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageHelper;
@@ -11,6 +12,8 @@ import com.jiawa.train.business.mapper.TrainStationMapper;
 import com.jiawa.train.business.req.TrainStationQueryReq;
 import com.jiawa.train.business.req.TrainStationSaveReq;
 import com.jiawa.train.business.resp.TrainStationQueryResp;
+import com.jiawa.train.common.exception.BusinessException;
+import com.jiawa.train.common.exception.BusinessExceptionEnum;
 import com.jiawa.train.common.resp.PageResp;
 import com.jiawa.train.common.util.SnowUtil;
 import jakarta.annotation.Resource;
@@ -32,6 +35,15 @@ public class TrainStationService {
         DateTime now = DateTime.now();
         TrainStation trainStation = BeanUtil.copyProperties(req, TrainStation.class);
         if (ObjectUtil.isNull(trainStation.getId())) {
+            // 校验唯一性
+            TrainStation trainStationDB = selectByUniqueKey(req.getTrainCode(), req.getIndex());
+            if (ObjectUtil.isNotNull(trainStationDB)) {
+                throw new BusinessException(BusinessExceptionEnum.BUSINESS_TRAIN_STATION_INDEX_UNIQUE_ERROR);
+            }
+            trainStationDB = selectByUniqueKey(req.getTrainCode(), req.getName());
+            if (ObjectUtil.isNotNull(trainStationDB)) {
+                throw new BusinessException(BusinessExceptionEnum.BUSINESS_TRAIN_STATION_NAME_UNIQUE_ERROR);
+            }
             trainStation.setId(SnowUtil.getSnowflakeNextId());
             trainStation.setCreateTime(now);
             trainStation.setUpdateTime(now);
@@ -40,6 +52,26 @@ public class TrainStationService {
             trainStation.setUpdateTime(now);
             trainStationMapper.updateByPrimaryKey(trainStation);
         }
+    }
+
+    private TrainStation selectByUniqueKey(String trainCode, int index) {
+        TrainStationExample example = new TrainStationExample();
+        example.createCriteria().andTrainCodeEqualTo(trainCode).andIndexEqualTo(index);
+        List<TrainStation> list = trainStationMapper.selectByExample(example);
+        if(CollUtil.isEmpty(list)) {
+            return null;
+        }
+        return list.get(0);
+    }
+
+    private TrainStation selectByUniqueKey(String trainCode, String name) {
+        TrainStationExample example = new TrainStationExample();
+        example.createCriteria().andTrainCodeEqualTo(trainCode).andNameEqualTo(name);
+        List<TrainStation> list = trainStationMapper.selectByExample(example);
+        if(CollUtil.isEmpty(list)) {
+            return null;
+        }
+        return list.get(0);
     }
 
     public PageResp<TrainStationQueryResp> queryList(TrainStationQueryReq req) {
@@ -68,12 +100,7 @@ public class TrainStationService {
         return pageResp;
     }
 
-    // public List<TrainStationQueryResp> queryAll() {
-    //     TrainStationExample trainStationExample = new TrainStationExample();
-    //     trainStationExample.setOrderByClause("name_pinyin asc");
-    //     List<TrainStation> trainStationList = trainStationMapper.selectByExample(trainStationExample);
-    //     return BeanUtil.copyToList(trainStationList, TrainStationQueryResp.class);
-    // }
+
 
     public void delete(Long id) {
         trainStationMapper.deleteByPrimaryKey(id);
