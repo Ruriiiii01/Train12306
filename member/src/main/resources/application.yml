@@ -4,6 +4,8 @@ server:
   servlet:
     context-path: /member
 spring:
+  application:
+    name: member
   datasource:
     url: jdbc:mysql://localhost:3306/train_member?characterEncoding=UTF8&autoReconnect=true&serverTimezone=Asia/Shanghai
     username: root
