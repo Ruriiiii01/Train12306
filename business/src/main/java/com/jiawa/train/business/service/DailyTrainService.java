@@ -19,6 +19,7 @@ import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -30,6 +31,9 @@ public class DailyTrainService {
 
     @Resource
     private TrainService trainService;
+
+    @Resource
+    private DailyTrainStationService dailyTrainStationService;
 
     @Resource
     private DailyTrainMapper dailyTrainMapper;
@@ -74,6 +78,7 @@ public class DailyTrainService {
         dailyTrainMapper.deleteByPrimaryKey(id);
     }
 
+    @Transactional
     public void genDaily(Date date) {
         List<Train> trainList = trainService.selectAll();
         if (CollUtil.isEmpty(trainList)) {
@@ -98,5 +103,8 @@ public class DailyTrainService {
         dailyTrain.setUpdateTime(now);
         dailyTrain.setDate(date);
         dailyTrainMapper.insert(dailyTrain);
+
+        // 生成这个车次对应的每日车站信息
+        dailyTrainStationService.genDaily(date, train.getCode());
     }
 }
