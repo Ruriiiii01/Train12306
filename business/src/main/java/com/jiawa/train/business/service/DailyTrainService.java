@@ -63,7 +63,7 @@ public class DailyTrainService {
 
     public PageResp<DailyTrainQueryResp> queryList(DailyTrainQueryReq req) {
         DailyTrainExample dailyTrainExample = new DailyTrainExample();
-        dailyTrainExample.setOrderByClause("id desc");
+        dailyTrainExample.setOrderByClause("id asc");
         DailyTrainExample.Criteria criteria = dailyTrainExample.createCriteria();
 
         LOG.info("查询页码：{}", req.getPage());

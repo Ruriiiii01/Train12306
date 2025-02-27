@@ -8,6 +8,7 @@ import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.jiawa.train.business.domain.*;
+import com.jiawa.train.business.enums.SeatTypeEnum;
 import com.jiawa.train.common.resp.PageResp;
 import com.jiawa.train.common.util.SnowUtil;
 import com.jiawa.train.business.mapper.DailyTrainSeatMapper;
@@ -53,7 +54,7 @@ public class DailyTrainSeatService {
 
     public PageResp<DailyTrainSeatQueryResp> queryList(DailyTrainSeatQueryReq req) {
         DailyTrainSeatExample dailyTrainSeatExample = new DailyTrainSeatExample();
-        dailyTrainSeatExample.setOrderByClause("id desc");
+        dailyTrainSeatExample.setOrderByClause("id asc");
         DailyTrainSeatExample.Criteria criteria = dailyTrainSeatExample.createCriteria();
 
         LOG.info("查询页码：{}", req.getPage());
@@ -103,4 +104,12 @@ public class DailyTrainSeatService {
         }
     }
 
+    public int countSeat(String trainCode, Date date, SeatTypeEnum seatTypeEnum) {
+        DailyTrainSeatExample dailyTrainSeatExample = new DailyTrainSeatExample();
+        dailyTrainSeatExample.createCriteria()
+                .andTrainCodeEqualTo(trainCode)
+                .andDateEqualTo(date)
+                .andSeatTypeEqualTo(seatTypeEnum.getCode());
+        return (int) dailyTrainSeatMapper.countByExample(dailyTrainSeatExample);
+    }
 }

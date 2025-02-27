@@ -51,7 +51,7 @@ public class DailyTrainStationService {
 
     public PageResp<DailyTrainStationQueryResp> queryList(DailyTrainStationQueryReq req) {
         DailyTrainStationExample dailyTrainStationExample = new DailyTrainStationExample();
-        dailyTrainStationExample.setOrderByClause("id desc");
+        dailyTrainStationExample.setOrderByClause("id asc");
         DailyTrainStationExample.Criteria criteria = dailyTrainStationExample.createCriteria();
 
         LOG.info("查询页码：{}", req.getPage());

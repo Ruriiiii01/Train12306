@@ -46,7 +46,7 @@ public class PassengerService {
 
     public PageResp<PassengerQueryResp> queryList(PassengerQueryReq req) {
         PassengerExample passengerExample = new PassengerExample();
-        passengerExample.setOrderByClause("id desc");
+        passengerExample.setOrderByClause("id asc");
         PassengerExample.Criteria criteria = passengerExample.createCriteria();
 
         LOG.info("查询页码：{}", req.getPage());

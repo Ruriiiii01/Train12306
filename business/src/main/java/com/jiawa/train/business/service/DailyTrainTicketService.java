@@ -7,6 +7,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.jiawa.train.business.domain.*;
+import com.jiawa.train.business.enums.SeatTypeEnum;
 import com.jiawa.train.business.mapper.DailyTrainTicketMapper;
 import com.jiawa.train.business.req.DailyTrainTicketQueryReq;
 import com.jiawa.train.business.req.DailyTrainTicketSaveReq;
@@ -32,6 +33,9 @@ public class DailyTrainTicketService {
     private TrainStationService trainStationService;
 
     @Resource
+    private DailyTrainSeatService dailyTrainSeatService;
+
+    @Resource
     private DailyTrainTicketMapper dailyTrainTicketMapper;
 
     public void save(DailyTrainTicketSaveReq req) {
@@ -50,7 +54,7 @@ public class DailyTrainTicketService {
 
     public PageResp<DailyTrainTicketQueryResp> queryList(DailyTrainTicketQueryReq req) {
         DailyTrainTicketExample dailyTrainTicketExample = new DailyTrainTicketExample();
-        dailyTrainTicketExample.setOrderByClause("id desc");
+        dailyTrainTicketExample.setOrderByClause("id asc");
         DailyTrainTicketExample.Criteria criteria = dailyTrainTicketExample.createCriteria();
 
         LOG.info("查询页码：{}", req.getPage());
@@ -93,6 +97,8 @@ public class DailyTrainTicketService {
         if(CollUtil.isEmpty(trainList)) {
             return;
         }
+        // 计算余票信息
+
         DateTime now = DateTime.now();
         for(int i = 0 ; i < trainList.size() ; i++) {
             TrainStation trainStationStart = trainList.get(i);
@@ -110,13 +116,13 @@ public class DailyTrainTicketService {
                 dailyTrainTicket.setEndPinyin(trainStationEnd.getNamePinyin());
                 dailyTrainTicket.setEndTime(trainStationEnd.getInTime());
                 dailyTrainTicket.setEndIndex(trainStationEnd.getIndex());
-                dailyTrainTicket.setYdz(0);
+                dailyTrainTicket.setYdz(dailyTrainSeatService.countSeat(trainCode, date, SeatTypeEnum.YDZ));
                 dailyTrainTicket.setYdzPrice(BigDecimal.valueOf(0));
-                dailyTrainTicket.setEdz(0);
+                dailyTrainTicket.setEdz(dailyTrainSeatService.countSeat(trainCode, date, SeatTypeEnum.EDZ));
                 dailyTrainTicket.setEdzPrice(BigDecimal.valueOf(0));
-                dailyTrainTicket.setRw(0);
+                dailyTrainTicket.setRw(dailyTrainSeatService.countSeat(trainCode, date, SeatTypeEnum.RW));
                 dailyTrainTicket.setRwPrice(BigDecimal.valueOf(0));
-                dailyTrainTicket.setYw(0);
+                dailyTrainTicket.setYw(dailyTrainSeatService.countSeat(trainCode, date, SeatTypeEnum.YW));
                 dailyTrainTicket.setYwPrice(BigDecimal.valueOf(0));
                 dailyTrainTicket.setCreateTime(now);
                 dailyTrainTicket.setUpdateTime(now);
