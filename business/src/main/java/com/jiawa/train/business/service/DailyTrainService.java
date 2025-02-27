@@ -6,15 +6,15 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.jiawa.train.business.domain.Train;
-import com.jiawa.train.common.resp.PageResp;
-import com.jiawa.train.common.util.SnowUtil;
 import com.jiawa.train.business.domain.DailyTrain;
 import com.jiawa.train.business.domain.DailyTrainExample;
+import com.jiawa.train.business.domain.Train;
 import com.jiawa.train.business.mapper.DailyTrainMapper;
 import com.jiawa.train.business.req.DailyTrainQueryReq;
 import com.jiawa.train.business.req.DailyTrainSaveReq;
 import com.jiawa.train.business.resp.DailyTrainQueryResp;
+import com.jiawa.train.common.resp.PageResp;
+import com.jiawa.train.common.util.SnowUtil;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +43,9 @@ public class DailyTrainService {
 
     @Resource
     private DailyTrainMapper dailyTrainMapper;
+
+    @Resource
+    private DailyTrainTicketService dailyTrainTicketService;
 
     public void save(DailyTrainSaveReq req) {
         DateTime now = DateTime.now();
@@ -96,7 +99,7 @@ public class DailyTrainService {
     }
 
     @Transactional
-    private void genDailyTrain(Date date, Train train) {
+    public void genDailyTrain(Date date, Train train) {
         // 先删除当前日期当前车次的每日信息
         DailyTrainExample dailyTrainExample = new DailyTrainExample();
         dailyTrainExample.createCriteria().andCodeEqualTo(train.getCode()).andDateEqualTo(date);
@@ -119,5 +122,8 @@ public class DailyTrainService {
 
         // 生成这个车次对应的每日座位信息
         dailyTrainSeatService.genDaily(date, train.getCode());
+
+        // 生成这个车次对应的余票信息
+        dailyTrainTicketService.genDaily(date, train.getCode());
     }
 }
