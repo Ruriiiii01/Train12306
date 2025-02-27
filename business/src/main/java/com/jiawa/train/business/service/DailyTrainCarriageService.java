@@ -79,10 +79,8 @@ public class DailyTrainCarriageService {
         if(CollUtil.isEmpty(trainCarriageList)) {
             return;
         }
-        System.out.println(123123123);
         // 删除当前日期每日车厢数据
         DailyTrainCarriageExample dailyTrainCarriageExample = new DailyTrainCarriageExample();
-        dailyTrainCarriageExample.setOrderByClause("id desc");
         dailyTrainCarriageExample.createCriteria().andTrainCodeEqualTo(trainCode);
         dailyTrainCarriageMapper.deleteByExample(dailyTrainCarriageExample);
 

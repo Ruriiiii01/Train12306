@@ -39,6 +39,9 @@ public class DailyTrainService {
     private DailyTrainCarriageService dailyTrainCarriageService;
 
     @Resource
+    private DailyTrainSeatService dailyTrainSeatService;
+
+    @Resource
     private DailyTrainMapper dailyTrainMapper;
 
     public void save(DailyTrainSaveReq req) {
@@ -112,5 +115,8 @@ public class DailyTrainService {
 
         // 生成这个车次对应的每日车厢信息
         dailyTrainCarriageService.genDaily(date, train.getCode());
+
+        // 生成这个车次对应的每日座位信息
+        dailyTrainSeatService.genDaily(date, train.getCode());
     }
 }
