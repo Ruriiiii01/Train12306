@@ -18,6 +18,7 @@ import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -76,6 +77,7 @@ public class DailyTrainSeatService {
         dailyTrainSeatMapper.deleteByPrimaryKey(id);
     }
 
+    @Transactional
     public void genDaily(Date date, String trainCode) {
         List<TrainSeat> trainSeatList = trainSeatService.selectByTrainCode(trainCode);
         if(CollUtil.isEmpty(trainSeatList)) {
@@ -88,7 +90,7 @@ public class DailyTrainSeatService {
 
         // 生成当前日期每日车厢数据
         List<TrainStation> trainStationList = trainStationService.selectByTrainCode(trainCode);
-        String sell = StrUtil.fillBefore("", '0', trainStationList.size());
+        String sell = StrUtil.fillBefore("", '0', trainStationList.size()-1);
         for (TrainSeat trainSeat : trainSeatList) {
             DateTime now = DateTime.now();
             DailyTrainSeat dailyTrainSeat = BeanUtil.copyProperties(trainSeat, DailyTrainSeat.class);

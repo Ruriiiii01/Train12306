@@ -95,6 +95,7 @@ public class DailyTrainService {
         }
     }
 
+    @Transactional
     private void genDailyTrain(Date date, Train train) {
         // 先删除当前日期当前车次的每日信息
         DailyTrainExample dailyTrainExample = new DailyTrainExample();
