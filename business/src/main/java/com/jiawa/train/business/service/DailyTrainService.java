@@ -124,6 +124,6 @@ public class DailyTrainService {
         dailyTrainSeatService.genDaily(date, train.getCode());
 
         // 生成这个车次对应的余票信息
-        dailyTrainTicketService.genDaily(date, train.getCode());
+        dailyTrainTicketService.genDaily(date, train.getCode(), dailyTrain);
     }
 }
