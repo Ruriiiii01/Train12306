@@ -49,6 +49,10 @@ public class PassengerService {
         passengerExample.setOrderByClause("id asc");
         PassengerExample.Criteria criteria = passengerExample.createCriteria();
 
+        if(ObjectUtil.isNotNull(req.getMemberId())) {
+            criteria.andMemberIdEqualTo(req.getMemberId());
+        }
+
         LOG.info("查询页码：{}", req.getPage());
         LOG.info("每页条数：{}", req.getSize());
         PageHelper.startPage(req.getPage(), req.getSize());
@@ -64,6 +68,14 @@ public class PassengerService {
         pageResp.setTotal(pageInfo.getTotal());
         pageResp.setList(list);
         return pageResp;
+    }
+
+    public List<PassengerQueryResp> queryMine() {
+        PassengerExample example = new PassengerExample();
+        example.setOrderByClause("id asc");
+        example.createCriteria().andMemberIdEqualTo(LoginMemberContext.getId());
+        List<Passenger> passengers = passengerMapper.selectByExample(example);
+        return BeanUtil.copyToList(passengers, PassengerQueryResp.class);
     }
 
     public void delete(Long id) {
