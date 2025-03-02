@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.EnumUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -11,6 +12,7 @@ import com.jiawa.train.business.domain.ConfirmOrder;
 import com.jiawa.train.business.domain.ConfirmOrderExample;
 import com.jiawa.train.business.domain.DailyTrainTicket;
 import com.jiawa.train.business.enums.ConfirmOrderStatusEnum;
+import com.jiawa.train.business.enums.SeatColEnum;
 import com.jiawa.train.business.enums.SeatTypeEnum;
 import com.jiawa.train.business.mapper.ConfirmOrderMapper;
 import com.jiawa.train.business.req.ConfirmOrderDoReq;
@@ -27,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -105,6 +108,31 @@ public class ConfirmOrderService {
         LOG.info(dailyTrainTicket.toString());
 
         // 预扣余票数量
+        preRedcuceTickets(req, dailyTrainTicket);
+
+        // 获取座位的相对偏移值
+        ConfirmOrderTicketReq sample = req.getTickets().get(0);
+        if(StrUtil.isNotBlank(sample.getSeat())){ // 传入了选的座位 比如A1 B2
+            List<SeatColEnum> colEnumList = SeatColEnum.getColsByType(sample.getSeatTypeCode());
+            // 获取座位编号列表 A1 B1 C1 D1 A2 ...D2
+            List<String> colList = new ArrayList<>();
+            for(int i = 1 ; i <= 2 ; i++) {
+                for (SeatColEnum seatColEnum : colEnumList) {
+                    colList.add(seatColEnum.getCode() + i);
+                }
+            }
+            LOG.info("座位编号数组{}", colList);
+            // 计算传入座位的绝对偏移
+            List<Integer> offset = new ArrayList<>();
+            int firstOffset = colList.indexOf(sample.getSeat());
+            for (ConfirmOrderTicketReq ticket : req.getTickets()) {
+                offset.add(colList.indexOf(ticket.getSeat())-firstOffset);
+            }
+            LOG.info("相对偏移数组{}", offset);
+        }
+    }
+
+    private static void preRedcuceTickets(ConfirmOrderDoReq req, DailyTrainTicket dailyTrainTicket) {
         for (ConfirmOrderTicketReq ticket : req.getTickets()) {
             String seatTypeCode = ticket.getSeatTypeCode();
             switch (EnumUtil.getBy(SeatTypeEnum::getCode, seatTypeCode)) {
@@ -138,7 +166,5 @@ public class ConfirmOrderService {
                 }
             }
         }
-
-
     }
 }
