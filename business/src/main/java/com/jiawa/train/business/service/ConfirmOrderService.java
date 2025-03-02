@@ -2,6 +2,7 @@ package com.jiawa.train.business.service;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateTime;
+import cn.hutool.core.util.EnumUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
@@ -10,10 +11,14 @@ import com.jiawa.train.business.domain.ConfirmOrder;
 import com.jiawa.train.business.domain.ConfirmOrderExample;
 import com.jiawa.train.business.domain.DailyTrainTicket;
 import com.jiawa.train.business.enums.ConfirmOrderStatusEnum;
+import com.jiawa.train.business.enums.SeatTypeEnum;
 import com.jiawa.train.business.mapper.ConfirmOrderMapper;
 import com.jiawa.train.business.req.ConfirmOrderDoReq;
 import com.jiawa.train.business.req.ConfirmOrderQueryReq;
+import com.jiawa.train.business.req.ConfirmOrderTicketReq;
 import com.jiawa.train.business.resp.ConfirmOrderQueryResp;
+import com.jiawa.train.common.exception.BusinessException;
+import com.jiawa.train.common.exception.BusinessExceptionEnum;
 import com.jiawa.train.common.resp.PageResp;
 import com.jiawa.train.common.util.SnowUtil;
 import jakarta.annotation.Resource;
@@ -99,7 +104,41 @@ public class ConfirmOrderService {
         }
         LOG.info(dailyTrainTicket.toString());
 
+        // 预扣余票数量
+        for (ConfirmOrderTicketReq ticket : req.getTickets()) {
+            String seatTypeCode = ticket.getSeatTypeCode();
+            switch (EnumUtil.getBy(SeatTypeEnum::getCode, seatTypeCode)) {
+                case YDZ -> {
+                    int leftTicketsNum = dailyTrainTicket.getYdz() - 1;
+                    if(leftTicketsNum < 0) {
+                        throw new BusinessException(BusinessExceptionEnum.Confirm_Order_Not_Enough_ERROR);
+                    }
+                    dailyTrainTicket.setYdz(leftTicketsNum);
+                }
+                case EDZ -> {
+                    int leftTicketsNum = dailyTrainTicket.getEdz() - 1;
+                    if(leftTicketsNum < 0) {
+                        throw new BusinessException(BusinessExceptionEnum.Confirm_Order_Not_Enough_ERROR);
+                    }
+                    dailyTrainTicket.setEdz(leftTicketsNum);
+                }
+                case RW -> {
+                    int leftTicketsNum = dailyTrainTicket.getRw() - 1;
+                    if(leftTicketsNum < 0) {
+                        throw new BusinessException(BusinessExceptionEnum.Confirm_Order_Not_Enough_ERROR);
+                    }
+                    dailyTrainTicket.setRw(leftTicketsNum);
+                }
+                case YW -> {
+                    int leftTicketsNum = dailyTrainTicket.getYw() - 1;
+                    if(leftTicketsNum < 0) {
+                        throw new BusinessException(BusinessExceptionEnum.Confirm_Order_Not_Enough_ERROR);
+                    }
+                    dailyTrainTicket.setYw(leftTicketsNum);
+                }
+            }
+        }
+
+
     }
-
-
 }
