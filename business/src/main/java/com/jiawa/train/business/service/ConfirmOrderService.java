@@ -8,6 +8,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.jiawa.train.business.domain.ConfirmOrder;
 import com.jiawa.train.business.domain.ConfirmOrderExample;
+import com.jiawa.train.business.domain.DailyTrainTicket;
 import com.jiawa.train.business.enums.ConfirmOrderStatusEnum;
 import com.jiawa.train.business.mapper.ConfirmOrderMapper;
 import com.jiawa.train.business.req.ConfirmOrderDoReq;
@@ -27,6 +28,9 @@ import java.util.List;
 public class ConfirmOrderService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfirmOrderService.class);
+
+    @Resource
+    private DailyTrainTicketService dailyTrainTicketService;
 
     @Resource
     private ConfirmOrderMapper confirmOrderMapper;
@@ -72,6 +76,7 @@ public class ConfirmOrderService {
     }
 
     public void doConfirm(@Valid ConfirmOrderDoReq req) {
+        // 插入订单表
         DateTime now = DateTime.now();
         ConfirmOrder confirmOrder = new ConfirmOrder();
         confirmOrder.setId(SnowUtil.getSnowflakeNextId());
@@ -85,7 +90,16 @@ public class ConfirmOrderService {
         confirmOrder.setCreateTime(now);
         confirmOrder.setUpdateTime(now);
         confirmOrder.setTickets(JSON.toJSONString(req.getTickets()));
-
         confirmOrderMapper.insert(confirmOrder);
+
+        // 查询库存
+        DailyTrainTicket dailyTrainTicket = dailyTrainTicketService.selectByUniqueKey(req.getDate(), req.getTrainCode(), req.getStart(), req.getEnd());
+        if (ObjectUtil.isNull(dailyTrainTicket)) {
+            return;
+        }
+        LOG.info(dailyTrainTicket.toString());
+
     }
+
+
 }

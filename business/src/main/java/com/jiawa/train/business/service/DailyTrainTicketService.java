@@ -8,10 +8,7 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.jiawa.train.business.domain.DailyTrain;
-import com.jiawa.train.business.domain.DailyTrainTicket;
-import com.jiawa.train.business.domain.DailyTrainTicketExample;
-import com.jiawa.train.business.domain.TrainStation;
+import com.jiawa.train.business.domain.*;
 import com.jiawa.train.business.enums.SeatTypeEnum;
 import com.jiawa.train.business.enums.TrainTypeEnum;
 import com.jiawa.train.business.mapper.DailyTrainTicketMapper;
@@ -154,7 +151,20 @@ public class DailyTrainTicketService {
             }
 
         }
+    }
 
-
+    public DailyTrainTicket selectByUniqueKey(Date date, String trainCode, String start, String end) {
+        DailyTrainTicketExample example = new DailyTrainTicketExample();
+        example.setOrderByClause("id asc");
+        example.createCriteria()
+                .andDateEqualTo(date)
+                .andTrainCodeEqualTo(trainCode)
+                .andStartEqualTo(start)
+                .andEndEqualTo(end);
+        List<DailyTrainTicket> list = dailyTrainTicketMapper.selectByExample(example);
+        if(CollUtil.isEmpty(list)) {
+            return null;
+        }
+        return list.get(0);
     }
 }
