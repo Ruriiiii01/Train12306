@@ -116,4 +116,11 @@ public class DailyTrainSeatService {
         }
         return l;
     }
+
+    public List<DailyTrainSeat> selectByCarriage(Integer index) {
+        DailyTrainSeatExample dailyTrainSeatExample = new DailyTrainSeatExample();
+        dailyTrainSeatExample.setOrderByClause("carriage_seat_index asc");
+        dailyTrainSeatExample.createCriteria().andCarriageIndexEqualTo(index);
+        return dailyTrainSeatMapper.selectByExample(dailyTrainSeatExample);
+    }
 }

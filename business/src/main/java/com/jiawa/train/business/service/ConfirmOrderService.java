@@ -1,6 +1,7 @@
 package com.jiawa.train.business.service;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.EnumUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -8,9 +9,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.jiawa.train.business.domain.ConfirmOrder;
-import com.jiawa.train.business.domain.ConfirmOrderExample;
-import com.jiawa.train.business.domain.DailyTrainTicket;
+import com.jiawa.train.business.domain.*;
 import com.jiawa.train.business.enums.ConfirmOrderStatusEnum;
 import com.jiawa.train.business.enums.SeatColEnum;
 import com.jiawa.train.business.enums.SeatTypeEnum;
@@ -30,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -39,6 +39,12 @@ public class ConfirmOrderService {
 
     @Resource
     private DailyTrainTicketService dailyTrainTicketService;
+
+    @Resource
+    private DailyTrainCarriageService dailyTrainCarriageService;
+
+    @Resource
+    private DailyTrainSeatService dailyTrainSeatService;
 
     @Resource
     private ConfirmOrderMapper confirmOrderMapper;
@@ -110,27 +116,133 @@ public class ConfirmOrderService {
         // 预扣余票数量
         preRedcuceTickets(req, dailyTrainTicket);
 
-        // 获取座位的相对偏移值
+        // 选座
+        List<DailyTrainSeat>selectSeatList = new ArrayList<>();
         ConfirmOrderTicketReq sample = req.getTickets().get(0);
-        if(StrUtil.isNotBlank(sample.getSeat())){ // 传入了选的座位 比如A1 B2
-            List<SeatColEnum> colEnumList = SeatColEnum.getColsByType(sample.getSeatTypeCode());
-            // 获取座位编号列表 A1 B1 C1 D1 A2 ...D2
-            List<String> colList = new ArrayList<>();
-            for(int i = 1 ; i <= 2 ; i++) {
-                for (SeatColEnum seatColEnum : colEnumList) {
-                    colList.add(seatColEnum.getCode() + i);
+        if(StrUtil.isNotBlank(sample.getSeat())){
+            // 用户有选座
+            // 获取座位的相对偏移值
+            List<Integer> offset = getOffset(req, sample);
+            List<DailyTrainSeat> tempSeatList = getSeat(req.getDate(), req.getTrainCode(), sample.getSeatTypeCode(),
+                    sample.getSeat().split("")[0], offset,
+                    dailyTrainTicket.getStartIndex(), dailyTrainTicket.getEndIndex(),
+                    selectSeatList);
+            if(ObjectUtil.isNotNull(tempSeatList)){
+                selectSeatList.addAll(tempSeatList);
+            }
+        } else {
+            // 没有选座
+            for (ConfirmOrderTicketReq ticket : req.getTickets()) {
+                List<DailyTrainSeat> tempSeatList = getSeat(req.getDate(), req.getTrainCode(), ticket.getSeatTypeCode(),
+                        null, null,
+                        dailyTrainTicket.getStartIndex(), dailyTrainTicket.getEndIndex(),
+                        selectSeatList);
+                if(ObjectUtil.isNotNull(tempSeatList)){
+                    selectSeatList.addAll(tempSeatList);
                 }
             }
-            LOG.info("座位编号数组{}", colList);
-            // 计算传入座位的绝对偏移
-            List<Integer> offset = new ArrayList<>();
-            int firstOffset = colList.indexOf(sample.getSeat());
-            for (ConfirmOrderTicketReq ticket : req.getTickets()) {
-                offset.add(colList.indexOf(ticket.getSeat())-firstOffset);
-            }
-            LOG.info("相对偏移数组{}", offset);
         }
+        LOG.info("选出座位数目{}", selectSeatList.size());
     }
+
+    private static List<Integer> getOffset(ConfirmOrderDoReq req, ConfirmOrderTicketReq sample) {
+        List<SeatColEnum> colEnumList = SeatColEnum.getColsByType(sample.getSeatTypeCode());
+        // 获取座位编号列表 A1 B1 C1 D1 A2 ...D2
+        List<String> colList = new ArrayList<>();
+        for(int i = 1 ; i <= 2 ; i++) {
+            for (SeatColEnum seatColEnum : colEnumList) {
+                colList.add(seatColEnum.getCode() + i);
+            }
+        }
+        LOG.info("座位编号数组{}", colList);
+        // 计算传入座位的绝对偏移
+        List<Integer> offset = new ArrayList<>();
+        int firstOffset = colList.indexOf(sample.getSeat());
+        for (ConfirmOrderTicketReq ticket : req.getTickets()) {
+            offset.add(colList.indexOf(ticket.getSeat())-firstOffset);
+        }
+        LOG.info("相对偏移数组{}", offset);
+        return offset;
+    }
+
+    private List<DailyTrainSeat> getSeat(Date date, String trainCode, String seatTypeCode, String column, List<Integer> offset,
+                                         Integer startIndex, Integer endIndex,
+                                         List<DailyTrainSeat>hasSelectSeatList) {
+        // 选座列表
+        List<DailyTrainSeat>selectSeatList = new ArrayList<>();
+
+        // 根据座位类型，查出所有车厢
+        List<DailyTrainCarriage> dailyTrainCarriageList = dailyTrainCarriageService.selectBySeatType(date, trainCode, seatTypeCode);
+        LOG.info("车厢数量{}", dailyTrainCarriageList.size());
+
+        // 根据车厢遍历出座位列表
+        for (DailyTrainCarriage dailyTrainCarriage : dailyTrainCarriageList) {
+            LOG.info("在{}号车厢选座", dailyTrainCarriage.getIndex());
+            List<DailyTrainSeat> seatList = dailyTrainSeatService.selectByCarriage(dailyTrainCarriage.getIndex());
+            // LOG.info("座位数为{}", seatList.size());
+
+            // 遍历车厢中的座位
+            int firstManIndex = -1;
+            for (DailyTrainSeat seat : seatList) {
+                firstManIndex++;
+                // 如果选座了，就要判断当列值是不是对应的
+                if(StrUtil.isNotBlank(column) && !column.equals(seat.getCol())) {
+                    continue;
+                }
+                // 判断是否重复选取过
+                boolean isSelectBefore = false;
+                for (DailyTrainSeat hasSeat : hasSelectSeatList) {
+                    if (hasSeat.getId().equals(seat.getId())) {
+                        isSelectBefore = true;
+                        break;
+                    }
+                }
+                if(isSelectBefore){
+                    continue;
+                }
+                // 判断是否可以选
+                boolean available = isAvailable(startIndex, endIndex, seat);
+                // 如果可选
+                if(available) {
+                    selectSeatList.add(seat);
+                    // 如果传入了offset矩阵，还需要判断其他的座位能不能选
+                    if (CollUtil.isNotEmpty(offset)) {
+                        // 如果有offset矩阵，判断其他票是不是可选的
+                        for (int i = 1; i < offset.size(); i++) {
+                            if (i + firstManIndex >= seatList.size() || !available) {
+                                // 越界了或者其他票选的座位不可用
+                                available = false;
+                                break;
+                            }
+                            available = isAvailable(startIndex, endIndex, seatList.get(i + firstManIndex));
+                            if (available) {
+                                selectSeatList.add(seatList.get(i + firstManIndex));
+                            }
+                        }
+                    }
+                }
+                // 其他座位校验后也满足条件
+                if (available) {
+                    LOG.info("seat{}可选", seat.getCarriageSeatIndex());
+                    return selectSeatList;
+                } else {
+                    selectSeatList.clear();
+                    LOG.info("seat{}不可选", seat.getCarriageSeatIndex());
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean isAvailable(Integer startIndex, Integer endIndex, DailyTrainSeat seat) {
+        // 判断当前座位是否可选
+        String sell = seat.getSell();
+        // 获取该区间的售卖情况
+        String subSell = sell.substring(startIndex, endIndex);
+        // 说明该区间可以选
+        return Integer.parseInt(subSell) == 0;
+    }
+
 
     private static void preRedcuceTickets(ConfirmOrderDoReq req, DailyTrainTicket dailyTrainTicket) {
         for (ConfirmOrderTicketReq ticket : req.getTickets()) {

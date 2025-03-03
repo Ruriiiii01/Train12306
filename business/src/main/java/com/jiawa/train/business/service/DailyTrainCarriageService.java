@@ -75,6 +75,16 @@ public class DailyTrainCarriageService {
         dailyTrainCarriageMapper.deleteByPrimaryKey(id);
     }
 
+    public List<DailyTrainCarriage> selectBySeatType(Date date, String trainCode, String seatTypeCode) {
+        DailyTrainCarriageExample example = new DailyTrainCarriageExample();
+        example.setOrderByClause("id asc");
+        example.createCriteria()
+                .andDateEqualTo(date)
+                .andTrainCodeEqualTo(trainCode)
+                .andSeatTypeEqualTo(seatTypeCode);
+        return dailyTrainCarriageMapper.selectByExample(example);
+    }
+
     @Transactional
     public void genDaily(Date date, String trainCode) {
         List<TrainCarriage> trainCarriageList = trainCarriageService.selectByTrainCode(trainCode);
