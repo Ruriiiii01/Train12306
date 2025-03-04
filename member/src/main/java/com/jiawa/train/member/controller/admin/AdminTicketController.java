@@ -1,4 +1,4 @@
-package com.jiawa.train.member.controller;
+package com.jiawa.train.member.controller.admin;
 
 import com.jiawa.train.common.req.MemberTicketReq;
 import com.jiawa.train.common.resp.CommonResp;
@@ -11,8 +11,8 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/ticket")
-public class TicketController {
+@RequestMapping("/admin/ticket")
+public class AdminTicketController {
 
     @Resource
     private TicketService ticketService;

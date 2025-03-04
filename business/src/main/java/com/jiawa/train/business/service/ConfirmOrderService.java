@@ -93,6 +93,8 @@ public class ConfirmOrderService {
     }
 
     public void doConfirm(@Valid ConfirmOrderDoReq req) {
+
+        List<ConfirmOrderTicketReq> tickets = req.getTickets();
         // 插入订单表
         DateTime now = DateTime.now();
         ConfirmOrder confirmOrder = new ConfirmOrder();
@@ -106,7 +108,7 @@ public class ConfirmOrderService {
         confirmOrder.setStatus(ConfirmOrderStatusEnum.INIT.getCode());
         confirmOrder.setCreateTime(now);
         confirmOrder.setUpdateTime(now);
-        confirmOrder.setTickets(JSON.toJSONString(req.getTickets()));
+        confirmOrder.setTickets(JSON.toJSONString(tickets));
         confirmOrderMapper.insert(confirmOrder);
 
         // 查询库存
@@ -121,7 +123,7 @@ public class ConfirmOrderService {
 
         // 选座
         List<DailyTrainSeat>selectSeatList = new ArrayList<>();
-        ConfirmOrderTicketReq sample = req.getTickets().get(0);
+        ConfirmOrderTicketReq sample = tickets.get(0);
         if(StrUtil.isNotBlank(sample.getSeat())){
             // 用户有选座
             // 获取座位的相对偏移值
@@ -135,7 +137,7 @@ public class ConfirmOrderService {
             }
         } else {
             // 没有选座
-            for (ConfirmOrderTicketReq ticket : req.getTickets()) {
+            for (ConfirmOrderTicketReq ticket : tickets) {
                 List<DailyTrainSeat> tempSeatList = getSeat(req.getDate(), req.getTrainCode(), ticket.getSeatTypeCode(),
                         null, null,
                         dailyTrainTicket.getStartIndex(), dailyTrainTicket.getEndIndex(),
@@ -148,7 +150,7 @@ public class ConfirmOrderService {
         LOG.info("选出座位数目{}", selectSeatList.size());
 
         // 修改数据库
-        afterConfirmOrderService.afterDoConfirm(selectSeatList, dailyTrainTicket.getStartIndex(), dailyTrainTicket.getEndIndex());
+        afterConfirmOrderService.afterDoConfirm(selectSeatList, dailyTrainTicket, tickets, confirmOrder);
 
     }
 

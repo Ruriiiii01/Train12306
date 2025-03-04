@@ -66,6 +66,13 @@ public class DailyTrainService {
         dailyTrainExample.setOrderByClause("id asc");
         DailyTrainExample.Criteria criteria = dailyTrainExample.createCriteria();
 
+        if (ObjectUtil.isNotNull(req.getDate())) {
+            criteria.andDateEqualTo(req.getDate());
+        }
+        if (ObjectUtil.isNotEmpty(req.getCode())) {
+            criteria.andCodeEqualTo(req.getCode());
+        }
+
         LOG.info("查询页码：{}", req.getPage());
         LOG.info("每页条数：{}", req.getSize());
         PageHelper.startPage(req.getPage(), req.getSize());

@@ -57,6 +57,10 @@ public class DailyTrainSeatService {
         dailyTrainSeatExample.setOrderByClause("id asc");
         DailyTrainSeatExample.Criteria criteria = dailyTrainSeatExample.createCriteria();
 
+        if (ObjectUtil.isNotEmpty(req.getTrainCode())) {
+            criteria.andTrainCodeEqualTo(req.getTrainCode());
+        }
+
         LOG.info("查询页码：{}", req.getPage());
         LOG.info("每页条数：{}", req.getSize());
         PageHelper.startPage(req.getPage(), req.getSize());
@@ -86,7 +90,7 @@ public class DailyTrainSeatService {
         }
         // 删除当前日期每日车厢数据
         DailyTrainSeatExample dailyTrainSeatExample = new DailyTrainSeatExample();
-        dailyTrainSeatExample.createCriteria().andTrainCodeEqualTo(trainCode);
+        dailyTrainSeatExample.createCriteria().andTrainCodeEqualTo(trainCode).andDateEqualTo(date);
         dailyTrainSeatMapper.deleteByExample(dailyTrainSeatExample);
 
         // 生成当前日期每日车厢数据

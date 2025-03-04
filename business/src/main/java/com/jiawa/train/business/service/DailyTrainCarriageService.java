@@ -3,6 +3,7 @@ package com.jiawa.train.business.service;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -54,6 +55,13 @@ public class DailyTrainCarriageService {
         dailyTrainCarriageExample.setOrderByClause("id asc");
         DailyTrainCarriageExample.Criteria criteria = dailyTrainCarriageExample.createCriteria();
 
+        if (ObjUtil.isNotNull(req.getDate())) {
+            criteria.andDateEqualTo(req.getDate());
+        }
+        if (ObjUtil.isNotEmpty(req.getTrainCode())) {
+            criteria.andTrainCodeEqualTo(req.getTrainCode());
+        }
+
         LOG.info("查询页码：{}", req.getPage());
         LOG.info("每页条数：{}", req.getSize());
         PageHelper.startPage(req.getPage(), req.getSize());
@@ -93,7 +101,7 @@ public class DailyTrainCarriageService {
         }
         // 删除当前日期每日车厢数据
         DailyTrainCarriageExample dailyTrainCarriageExample = new DailyTrainCarriageExample();
-        dailyTrainCarriageExample.createCriteria().andTrainCodeEqualTo(trainCode);
+        dailyTrainCarriageExample.createCriteria().andTrainCodeEqualTo(trainCode).andDateEqualTo(date);
         dailyTrainCarriageMapper.deleteByExample(dailyTrainCarriageExample);
 
         // 生成当前日期每日车厢数据

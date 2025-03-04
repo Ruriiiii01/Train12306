@@ -1,14 +1,23 @@
 package com.jiawa.train.business.service;
 
+import com.jiawa.train.business.domain.ConfirmOrder;
 import com.jiawa.train.business.domain.DailyTrainSeat;
+import com.jiawa.train.business.domain.DailyTrainTicket;
+import com.jiawa.train.business.enums.ConfirmOrderStatusEnum;
+import com.jiawa.train.business.feign.MemberFeign;
+import com.jiawa.train.business.mapper.ConfirmOrderMapper;
 import com.jiawa.train.business.mapper.DailyTrainSeatMapper;
 import com.jiawa.train.business.mapper.cust.DailyTrainTicketMapperCust;
+import com.jiawa.train.business.req.ConfirmOrderTicketReq;
+import com.jiawa.train.common.req.MemberTicketReq;
+import com.jiawa.train.common.resp.CommonResp;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -22,10 +31,20 @@ public class AfterConfirmOrderService {
     @Resource
     private DailyTrainTicketMapperCust dailyTrainTicketMapperCust;
 
+    @Resource
+    private MemberFeign memberFeign;
+
+    @Resource
+    private ConfirmOrderMapper confirmOrderMapper;
+
     @Transactional
-    public void afterDoConfirm(List<DailyTrainSeat> selectSeatList, int startIndex, int endIndex) {
+    public void afterDoConfirm(List<DailyTrainSeat> selectSeatList, DailyTrainTicket dailyTrainTicket, List<ConfirmOrderTicketReq> tickets, ConfirmOrder confirmOrder) {
+
+        int startIndex = dailyTrainTicket.getStartIndex();
+        int endIndex = dailyTrainTicket.getEndIndex();
         // 更新座位的sell信息
-        for (DailyTrainSeat selectSeat : selectSeatList) {
+        for (int i = 0 ; i < selectSeatList.size() ; i++) {
+            DailyTrainSeat selectSeat = selectSeatList.get(i);
             DailyTrainSeat seatForUpdate = new DailyTrainSeat();
             seatForUpdate.setId(selectSeat.getId());
             seatForUpdate.setSell(selectSeat.getSell());
@@ -60,6 +79,31 @@ public class AfterConfirmOrderService {
                     effectStartMax,
                     effectEndMin,
                     effectEndMax);
+
+            // 调用会员服务接口，为会员增加一张车票
+            MemberTicketReq memberTicketReq = new MemberTicketReq();
+            memberTicketReq.setMemberId(confirmOrder.getMemberId());
+            memberTicketReq.setPassengerId(tickets.get(i).getPassengerId());
+            memberTicketReq.setPassengerName(tickets.get(i).getPassengerName());
+            memberTicketReq.setTrainDate(dailyTrainTicket.getDate());
+            memberTicketReq.setTrainCode(dailyTrainTicket.getTrainCode());
+            memberTicketReq.setCarriageIndex(selectSeat.getCarriageIndex());
+            memberTicketReq.setSeatRow(selectSeat.getRow());
+            memberTicketReq.setSeatCol(selectSeat.getCol());
+            memberTicketReq.setStartStation(dailyTrainTicket.getStart());
+            memberTicketReq.setStartTime(dailyTrainTicket.getStartTime());
+            memberTicketReq.setEndStation(dailyTrainTicket.getEnd());
+            memberTicketReq.setEndTime(dailyTrainTicket.getEndTime());
+            memberTicketReq.setSeatType(selectSeat.getSeatType());
+            CommonResp<Object> commonResp = memberFeign.save(memberTicketReq);
+            LOG.info("调用member接口，返回：{}", commonResp);
+
+            // 更新订单状态为成功
+            ConfirmOrder confirmOrderForUpdate = new ConfirmOrder();
+            confirmOrderForUpdate.setId(confirmOrder.getId());
+            confirmOrderForUpdate.setUpdateTime(new Date());
+            confirmOrderForUpdate.setStatus(ConfirmOrderStatusEnum.SUCCESS.getCode());
+            confirmOrderMapper.updateByPrimaryKeySelective(confirmOrderForUpdate);
         }
     }
 }
