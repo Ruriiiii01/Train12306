@@ -47,6 +47,9 @@ public class ConfirmOrderService {
     private DailyTrainSeatService dailyTrainSeatService;
 
     @Resource
+    AfterConfirmOrderService afterConfirmOrderService;
+
+    @Resource
     private ConfirmOrderMapper confirmOrderMapper;
 
     public void save(ConfirmOrderDoReq req) {
@@ -143,6 +146,10 @@ public class ConfirmOrderService {
             }
         }
         LOG.info("选出座位数目{}", selectSeatList.size());
+
+        // 修改数据库
+        afterConfirmOrderService.afterDoConfirm(selectSeatList, dailyTrainTicket.getStartIndex(), dailyTrainTicket.getEndIndex());
+
     }
 
     private static List<Integer> getOffset(ConfirmOrderDoReq req, ConfirmOrderTicketReq sample) {
@@ -209,14 +216,15 @@ public class ConfirmOrderService {
                     if (CollUtil.isNotEmpty(offset)) {
                         // 如果有offset矩阵，判断其他票是不是可选的
                         for (int i = 1; i < offset.size(); i++) {
-                            if (i + firstManIndex >= seatList.size() || !available) {
+                            int offIdx = offset.get(i);
+                            if (offIdx + firstManIndex >= seatList.size() || !available) {
                                 // 越界了或者其他票选的座位不可用
                                 available = false;
                                 break;
                             }
-                            available = isAvailable(startIndex, endIndex, seatList.get(i + firstManIndex));
+                            available = isAvailable(startIndex, endIndex, seatList.get(offIdx + firstManIndex));
                             if (available) {
-                                selectSeatList.add(seatList.get(i + firstManIndex));
+                                selectSeatList.add(seatList.get(offIdx + firstManIndex));
                             }
                         }
                     }
@@ -239,8 +247,13 @@ public class ConfirmOrderService {
         String sell = seat.getSell();
         // 获取该区间的售卖情况
         String subSell = sell.substring(startIndex, endIndex);
+        boolean available = Integer.parseInt(subSell) == 0;
+        // 如果可选，修改sell
+        StringBuffer sb = new StringBuffer(sell);
+        sb.replace(startIndex, endIndex, "1".repeat(endIndex - startIndex));
+        seat.setSell(sb.toString());
         // 说明该区间可以选
-        return Integer.parseInt(subSell) == 0;
+        return available;
     }
 
 
