@@ -92,7 +92,7 @@ public class ConfirmOrderService {
         confirmOrderMapper.deleteByPrimaryKey(id);
     }
 
-    public void doConfirm(@Valid ConfirmOrderDoReq req) {
+    public synchronized void doConfirm(@Valid ConfirmOrderDoReq req) throws Exception {
 
         List<ConfirmOrderTicketReq> tickets = req.getTickets();
         // 插入订单表

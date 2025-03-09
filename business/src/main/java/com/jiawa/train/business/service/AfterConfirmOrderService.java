@@ -11,11 +11,11 @@ import com.jiawa.train.business.mapper.cust.DailyTrainTicketMapperCust;
 import com.jiawa.train.business.req.ConfirmOrderTicketReq;
 import com.jiawa.train.common.req.MemberTicketReq;
 import com.jiawa.train.common.resp.CommonResp;
+import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -37,8 +37,9 @@ public class AfterConfirmOrderService {
     @Resource
     private ConfirmOrderMapper confirmOrderMapper;
 
-    @Transactional
-    public void afterDoConfirm(List<DailyTrainSeat> selectSeatList, DailyTrainTicket dailyTrainTicket, List<ConfirmOrderTicketReq> tickets, ConfirmOrder confirmOrder) {
+    // @Transactional
+    @GlobalTransactional
+    public void afterDoConfirm(List<DailyTrainSeat> selectSeatList, DailyTrainTicket dailyTrainTicket, List<ConfirmOrderTicketReq> tickets, ConfirmOrder confirmOrder) throws Exception {
 
         int startIndex = dailyTrainTicket.getStartIndex();
         int endIndex = dailyTrainTicket.getEndIndex();
@@ -104,6 +105,10 @@ public class AfterConfirmOrderService {
             confirmOrderForUpdate.setUpdateTime(new Date());
             confirmOrderForUpdate.setStatus(ConfirmOrderStatusEnum.SUCCESS.getCode());
             confirmOrderMapper.updateByPrimaryKeySelective(confirmOrderForUpdate);
+
+            // if(1==1) {
+            //     throw new Exception("测试异常");
+            // }
         }
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.util.Date;
 import java.util.Objects;
 
-public class DailyTrainTicketQueryReq extends PageReq {
+public class DailyTrainTicketQueryReq extends PageReq  {
 
     /**
      * 日期

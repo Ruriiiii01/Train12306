@@ -19,7 +19,7 @@ public class ConfirmOrderController {
     private ConfirmOrderService confirmOrderService;
 
     @PostMapping("/do")
-    public CommonResp<Object> doConfirm(@Valid @RequestBody ConfirmOrderDoReq req) {
+    public CommonResp<Object> doConfirm(@Valid @RequestBody ConfirmOrderDoReq req) throws Exception {
         req.setMemberId(LoginMemberContext.getId());
         confirmOrderService.doConfirm(req);
         return new CommonResp<>();
