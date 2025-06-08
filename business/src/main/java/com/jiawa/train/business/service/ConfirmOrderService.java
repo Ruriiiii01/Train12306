@@ -3,6 +3,7 @@ package com.jiawa.train.business.service;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.EnumUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -26,11 +27,13 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class ConfirmOrderService {
@@ -51,6 +54,9 @@ public class ConfirmOrderService {
 
     @Resource
     private ConfirmOrderMapper confirmOrderMapper;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     public void save(ConfirmOrderDoReq req) {
         DateTime now = DateTime.now();
@@ -92,65 +98,76 @@ public class ConfirmOrderService {
         confirmOrderMapper.deleteByPrimaryKey(id);
     }
 
-    public synchronized void doConfirm(@Valid ConfirmOrderDoReq req) throws Exception {
+    public void doConfirm(@Valid ConfirmOrderDoReq req) throws Exception {
 
-        List<ConfirmOrderTicketReq> tickets = req.getTickets();
-        // 插入订单表
-        DateTime now = DateTime.now();
-        ConfirmOrder confirmOrder = new ConfirmOrder();
-        confirmOrder.setId(SnowUtil.getSnowflakeNextId());
-        confirmOrder.setMemberId(req.getMemberId());
-        confirmOrder.setDate(req.getDate());
-        confirmOrder.setTrainCode(req.getTrainCode());
-        confirmOrder.setStart(req.getStart());
-        confirmOrder.setEnd(req.getEnd());
-        confirmOrder.setDailyTrainTicketId(req.getDailyTrainTicketId());
-        confirmOrder.setStatus(ConfirmOrderStatusEnum.INIT.getCode());
-        confirmOrder.setCreateTime(now);
-        confirmOrder.setUpdateTime(now);
-        confirmOrder.setTickets(JSON.toJSONString(tickets));
-        confirmOrderMapper.insert(confirmOrder);
 
-        // 查询库存
-        DailyTrainTicket dailyTrainTicket = dailyTrainTicketService.selectByUniqueKey(req.getDate(), req.getTrainCode(), req.getStart(), req.getEnd());
-        if (ObjectUtil.isNull(dailyTrainTicket)) {
-            return;
+        String lock = req.getDate() + "-" + req.getTrainCode() + "-lock";
+        Boolean isLock = stringRedisTemplate.opsForValue().setIfAbsent(lock, "1", 5, TimeUnit.SECONDS);
+        if (BooleanUtil.isFalse(isLock)) {
+            throw new BusinessException(BusinessExceptionEnum.GET_LOCK_ERROR);
         }
-        LOG.info(dailyTrainTicket.toString());
 
-        // 预扣余票数量
-        preRedcuceTickets(req, dailyTrainTicket);
+        try {
+            List<ConfirmOrderTicketReq> tickets = req.getTickets();
+            // 插入订单表
+            DateTime now = DateTime.now();
+            ConfirmOrder confirmOrder = new ConfirmOrder();
+            confirmOrder.setId(SnowUtil.getSnowflakeNextId());
+            confirmOrder.setMemberId(req.getMemberId());
+            confirmOrder.setDate(req.getDate());
+            confirmOrder.setTrainCode(req.getTrainCode());
+            confirmOrder.setStart(req.getStart());
+            confirmOrder.setEnd(req.getEnd());
+            confirmOrder.setDailyTrainTicketId(req.getDailyTrainTicketId());
+            confirmOrder.setStatus(ConfirmOrderStatusEnum.INIT.getCode());
+            confirmOrder.setCreateTime(now);
+            confirmOrder.setUpdateTime(now);
+            confirmOrder.setTickets(JSON.toJSONString(tickets));
+            confirmOrderMapper.insert(confirmOrder);
 
-        // 选座
-        List<DailyTrainSeat>selectSeatList = new ArrayList<>();
-        ConfirmOrderTicketReq sample = tickets.get(0);
-        if(StrUtil.isNotBlank(sample.getSeat())){
-            // 用户有选座
-            // 获取座位的相对偏移值
-            List<Integer> offset = getOffset(req, sample);
-            List<DailyTrainSeat> tempSeatList = getSeat(req.getDate(), req.getTrainCode(), sample.getSeatTypeCode(),
-                    sample.getSeat().split("")[0], offset,
-                    dailyTrainTicket.getStartIndex(), dailyTrainTicket.getEndIndex(),
-                    selectSeatList);
-            if(ObjectUtil.isNotNull(tempSeatList)){
-                selectSeatList.addAll(tempSeatList);
+            // 查询库存
+            DailyTrainTicket dailyTrainTicket = dailyTrainTicketService.selectByUniqueKey(req.getDate(), req.getTrainCode(), req.getStart(), req.getEnd());
+            if (ObjectUtil.isNull(dailyTrainTicket)) {
+                return;
             }
-        } else {
-            // 没有选座
-            for (ConfirmOrderTicketReq ticket : tickets) {
-                List<DailyTrainSeat> tempSeatList = getSeat(req.getDate(), req.getTrainCode(), ticket.getSeatTypeCode(),
-                        null, null,
+            LOG.info(dailyTrainTicket.toString());
+
+            // 预扣余票数量
+            preRedcuceTickets(req, dailyTrainTicket);
+
+            // 选座
+            List<DailyTrainSeat>selectSeatList = new ArrayList<>();
+            ConfirmOrderTicketReq sample = tickets.get(0);
+            if(StrUtil.isNotBlank(sample.getSeat())){
+                // 用户有选座
+                // 获取座位的相对偏移值
+                List<Integer> offset = getOffset(req, sample);
+                List<DailyTrainSeat> tempSeatList = getSeat(req.getDate(), req.getTrainCode(), sample.getSeatTypeCode(),
+                        sample.getSeat().split("")[0], offset,
                         dailyTrainTicket.getStartIndex(), dailyTrainTicket.getEndIndex(),
                         selectSeatList);
                 if(ObjectUtil.isNotNull(tempSeatList)){
                     selectSeatList.addAll(tempSeatList);
                 }
+            } else {
+                // 没有选座
+                for (ConfirmOrderTicketReq ticket : tickets) {
+                    List<DailyTrainSeat> tempSeatList = getSeat(req.getDate(), req.getTrainCode(), ticket.getSeatTypeCode(),
+                            null, null,
+                            dailyTrainTicket.getStartIndex(), dailyTrainTicket.getEndIndex(),
+                            selectSeatList);
+                    if(ObjectUtil.isNotNull(tempSeatList)){
+                        selectSeatList.addAll(tempSeatList);
+                    }
+                }
             }
-        }
-        LOG.info("选出座位数目{}", selectSeatList.size());
+            LOG.info("选出座位数目{}", selectSeatList.size());
 
-        // 修改数据库
-        afterConfirmOrderService.afterDoConfirm(selectSeatList, dailyTrainTicket, tickets, confirmOrder);
+            // 修改数据库
+            afterConfirmOrderService.afterDoConfirm(selectSeatList, dailyTrainTicket, tickets, confirmOrder);
+        } finally {
+            stringRedisTemplate.delete(lock);
+        }
 
     }
 

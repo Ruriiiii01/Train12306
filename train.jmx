@@ -5,8 +5,6 @@
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="用户定义的变量">
         <collectionProp name="Arguments.arguments"/>
       </elementProp>
-      <boolProp name="TestPlan.functional_mode">false</boolProp>
-      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
     </TestPlan>
     <hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="线程组">
@@ -144,7 +142,7 @@
               </elementProp>
               <elementProp name="token" elementType="Header">
                 <stringProp name="Header.name">token</stringProp>
-                <stringProp name="Header.value">eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYmYiOjE3NDEzNDIwODgsIm1vYmlsZSI6IjEzMDAwMDAwMDAwIiwiaWQiOjE4OTM5MjA4MTQzMzI1MTQzMDQsImV4cCI6MTc0MTQyODQ4OCwiaWF0IjoxNzQxMzQyMDg4fQ.dSAvDqxBvmKFf6YTUM0NKuJhn3SEJqsPQUob5Wmcl7s</stringProp>
+                <stringProp name="Header.value">eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYmYiOjE3NDE1MDUyNTYsIm1vYmlsZSI6IjEzMDAwMDAwMDAwIiwiaWQiOjE4OTM5MjA4MTQzMzI1MTQzMDQsImV4cCI6MTc0MTU5MTY1NiwiaWF0IjoxNzQxNTA1MjU2fQ.hE2yzniHQsULqIKzN8YKpKekJs39DjUu6nDmylrHe2Y</stringProp>
               </elementProp>
             </collectionProp>
           </HeaderManager>

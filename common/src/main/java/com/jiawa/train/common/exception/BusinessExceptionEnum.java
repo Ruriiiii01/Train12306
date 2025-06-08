@@ -11,7 +11,9 @@ public enum BusinessExceptionEnum {
     BUSINESS_TRAIN_STATION_NAME_UNIQUE_ERROR("同车次站名已存在"),
     BUSINESS_TRAIN_CARRIAGE_INDEX_UNIQUE_ERROR("同车次厢号已存在"),
 
-    Confirm_Order_Not_Enough_ERROR("余票不足");
+    Confirm_Order_Not_Enough_ERROR("余票不足"),
+    After_CONFIRM_ORDER_ERROR("服务器忙，请稍后重试"),
+    GET_LOCK_ERROR("服务器忙，请稍后重试");
 
     private String desc;
 
